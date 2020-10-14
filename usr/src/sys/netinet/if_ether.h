@@ -105,9 +105,21 @@ struct	ether_arp {
  */
 struct	arpcom {
 	struct 	ifnet ac_if;		/* network-visible interface */
-	u_char	ac_enaddr[6];		/* ethernet hardware address */
-	struct	in_addr ac_ipaddr;	/* copy of ip address- XXX */
-	struct	ether_multi *ac_multiaddrs; /* list of ether multicast addrs */
+    /*
+     * ethernet hardware address
+     * 硬件地址。被硬件驱动从硬件复制到这里，
+     */
+	u_char	ac_enaddr[6];
+    /*
+     * copy of ip address- XXX
+     * 最后一个复制给当前接口的 ip 地址，chapter 6.6
+     */
+	struct	in_addr ac_ipaddr;
+    /*
+     * list of ether multicast addrs
+     * 多播地址
+     */
+	struct	ether_multi *ac_multiaddrs;
 	int	ac_multicnt;		/* length of ac_multiaddrs list */	
 };
 

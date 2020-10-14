@@ -217,9 +217,9 @@ leattach(hd)
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
 #endif
 #if NBPFILTER > 0
-	bpfattach(&ifp->if_bpf, ifp, DLT_EN10MB, sizeof(struct ether_header));
+	bpfattach(&ifp->if_bpf, ifp, DLT_EN10MB, sizeof(struct ether_header));   // chapter 31
 #endif
-	if_attach(ifp);
+	if_attach(ifp);  // 将初始化完成的 ifnet 插入到接口链表中
 	return (1);
 }
 

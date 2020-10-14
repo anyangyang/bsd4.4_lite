@@ -57,7 +57,7 @@ struct hp_device {
 	int		hp_unit;
 	int		hp_ctlr;
 	int		hp_slave;
-	char		*hp_addr;
+	char	*hp_addr;
 	int		hp_dk;
 	int		hp_flags;
 	int		hp_alive;

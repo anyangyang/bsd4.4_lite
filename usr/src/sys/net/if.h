@@ -79,26 +79,63 @@ struct	ether_header;
  * Structure defining a queue for a network interface.
  *
  * (Would like to call this struct ``if'', but C isn't PL/1.)
+ *
+ * 在系统初始化期间，将会为每个网络设备分配一个 ifnet，用户存储一些接口相关的信息
+ * ifnet 是一个全局变量
+ * 每个 ifnet 都可以支持不同的协议族比如 OSI 或者 Intenet(当前最广泛使用的协议族TCP/IP协议栈), 每个协议族都
+ * 所使用的地址可能是不同的，所以 if_addrlist 保存了不同的协议族所使用的接口地址。
+ * 当然，因为 if_addrlist 是链表的方式，理论上说，单个接口也可以支持同一个接口支持多个相同协议族的地址
+ * 在重编号一个网络时，在过渡阶段，存在两个IP地址时非常有用的，可以同时接收到老的IP和新的IP相关的报文
+ *
  */
 
 struct ifnet {
-	char	*if_name;		/* name, e.g. ``en'' or ``lo'' */
+	char	*if_name;		/* name, e.g. ``en'' or ``lo''， 标识接口类型，比如 en 表示以太网接口，lo表示环回接口 */
 	struct	ifnet *if_next;		/* all struct ifnets are chained */
 	struct	ifaddr *if_addrlist;	/* linked list of addresses per if */
-        int	if_pcount;		/* number of promiscuous listeners */
+	int	if_pcount;		/* number of promiscuous listeners */
 	caddr_t	if_bpf;			/* packet filter structure */
-	u_short	if_index;		/* numeric abbreviation for this if  */
-	short	if_unit;		/* sub-unit for lower level driver */
+    /*
+     * numeric abbreviation for this if。
+     * 在内核中独一无二地标识这个接口
+     */
+	u_short	if_index;
+    /*
+     * sub-unit for lower level driver，
+     * 用于表示不同接口类型的多个实例，比如有两个以太网接口，即 if_name = en,
+     * if_unit = 0, 表示第一个以太网接口, 也就是 en0; if_unit = 1 用于表示第二个以太网接口
+     */
+	short	if_unit;
 	short	if_timer;		/* time 'til if_watchdog called */
-	short	if_flags;		/* up/down, broadcast, etc. */
+    /*
+     * up/down, broadcast, etc.
+     * 声明接口的操作状态和一些操作属性
+     */
+	short	if_flags;
+
 	struct	if_data {
+
 /* generic interface information */
-		u_char	ifi_type;	/* ethernet, tokenring, etc */
-		u_char	ifi_addrlen;	/* media address length */
-		u_char	ifi_hdrlen;	/* media header length */
+        /*
+         * ethernet, tokenring, etc
+         * 申明被当前接口支持的硬件地址类型，具体查看 if_type.h
+         */
+		u_char	ifi_type;
+        /*
+         * media address length
+         * 地址长度，比如以太网是 48 位，即 6 个字节的地址长度
+         */
+		u_char	ifi_addrlen;
+        /*
+         * media header length
+         * outgoing packet 的头部长度，
+         * 比如以太网协议的头部长度是 14 个字节（6个字节的源硬件地址，6个字节目的硬件地址，以及两个字节的上层协议类型(ARP, RARP, IP 等)）
+         */
+		u_char	ifi_hdrlen;
 		u_long	ifi_mtu;	/* maximum transmission unit */
 		u_long	ifi_metric;	/* routing metric (external only) */
 		u_long	ifi_baudrate;	/* linespeed */
+
 /* volatile statistics */
 		u_long	ifi_ipackets;	/* packets received on interface */
 		u_long	ifi_ierrors;	/* input errors on interface */
@@ -113,6 +150,7 @@ struct ifnet {
 		u_long	ifi_noproto;	/* destined for unsupported protocol */
 		struct	timeval ifi_lastchange;/* last updated */
 	}	if_data;
+
 /* procedure handles */
 	int	(*if_init)		/* init routine */
 		__P((int));
@@ -129,11 +167,15 @@ struct ifnet {
 		__P((int));		/* new autoconfig will permit removal */
 	int	(*if_watchdog)		/* timer routine */
 		__P((int));
+
+    /* output queue */
 	struct	ifqueue {
 		struct	mbuf *ifq_head;
 		struct	mbuf *ifq_tail;
 		int	ifq_len;
+        /* 队列最大长度 */
 		int	ifq_maxlen;
+        /* 统计因为队列长度达到 ifq_maxlen 而被丢切的包的数量 */
 		int	ifq_drops;
 	} if_snd;			/* output queue */
 };
@@ -223,14 +265,25 @@ struct ifnet {
  */
 struct ifaddr {
 	struct	sockaddr *ifa_addr;	/* address of interface */
-	struct	sockaddr *ifa_dstaddr;	/* other end of p-to-p link */
+    /*
+     * other end of p-to-p link
+     * 1、指向接口 p2p 链路另一端的地址，或者
+     * 2、赋给这个接口的广播地址(broadcast address)
+     * 根据 ifnet 中的 if_flags 中的一对互斥的标记(IFF_BROADCAST 和 IFF_POINTOPOINT)来决定
+     */
+	struct	sockaddr *ifa_dstaddr;
 #define	ifa_broadaddr	ifa_dstaddr	/* broadcast address interface */
 	struct	sockaddr *ifa_netmask;	/* used to determine subnet */
 	struct	ifnet *ifa_ifp;		/* back-pointer to interface */
 	struct	ifaddr *ifa_next;	/* next address for interface */
 	void	(*ifa_rtrequest)();	/* check or clean routes (+ or -)'d */
 	u_short	ifa_flags;		/* mostly rt_flags for cloning */
-	short	ifa_refcnt;		/* extra to malloc for link info */
+    /*
+     * extra to malloc for link info
+     * 引用计数，用于统计引用当前 ifaddr 的数量
+     * 宏 IFAFREE 仅当 ifa_refcnt = 0 时，才释放 ifaddr 的内存空间
+     */
+	short	ifa_refcnt;
 	int	ifa_metric;		/* cost of going out this interface */
 #ifdef notdef
 	struct	rtentry *ifa_rt;	/* XXXX for ROUTETOIF ????? */

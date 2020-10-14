@@ -127,6 +127,10 @@ main(framep)
 
 	vm_mem_init();
 	kmeminit();
+	/**
+	 * 定位以及初始化所有接入到当前系统的设备(包括网络设备)
+	 * @return
+	 */
 	cpu_startup();
 
 	/*
@@ -228,7 +232,15 @@ main(framep)
 	 * until everything is ready.
 	 */
 	s = splimp();
+	/**
+	 * 初始化接口 chapter 7, 这里调用的是 if.c 中 ifinit()
+	 * @return
+	 */
 	ifinit();
+	/**
+	 * 初始化协议 chapter 7
+	 * @return
+	 */
 	domaininit();
 	splx(s);
 

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
+    <generated />
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="a94fd665-8004-4ef9-a724-7a9dc1a48f43" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/emacs-18.57/src/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/emacs-18.57/src/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/gcc-2.3.3/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/gcc-2.3.3/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/gdb-4.7.LBL/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/gdb-4.7.LBL/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/kermit-5A.188/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/kermit-5A.188/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/libg++-2.3/libg++/old-stream/Filebuf.cc" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/libg++-2.3/libg++/old-stream/Filebuf.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/libg++-2.3/libg++/old-stream/Filebuf.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/libg++-2.3/libg++/old-stream/Filebuf.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/libg++-2.3/libg++/src/Complex.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/libg++-2.3/libg++/src/Complex.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/libg++-2.3/libg++/src/Regex.cc" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/libg++-2.3/libg++/src/Regex.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/libg++-2.3/libg++/src/Regex.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/libg++-2.3/libg++/src/Regex.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/mh-6.8.3a/conf/doc/MH.rf" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/mh-6.8.3a/conf/doc/MH.rf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/mh-6.8.3a/doc/MH.me" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/mh-6.8.3a/doc/MH.me" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/mh-6.8.3a/doc/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/mh-6.8.3a/doc/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/mkmf/templates/C++.L" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/mkmf/templates/C++.L" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/mkmf/templates/C.L" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/mkmf/templates/C.L" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/config.H" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/config.H" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/os2/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/os2/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/x2p/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/x2p/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/games/chess/Xchess/ScrollText" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/sys/hp/dev/device.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/hp/dev/device.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/sys/hp300/conf/files.HP300" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/hp300/conf/files.HP300" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/sys/hp300/dev/if_le.c" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/hp300/dev/if_le.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/sys/kern/init_main.c" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/kern/init_main.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/sys/net/if.c" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/net/if.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/sys/net/if.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/net/if.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/sys/net/if_ethersubr.c" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/net/if_ethersubr.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/sys/net/if_slvar.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/net/if_slvar.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/sys/netinet/if_ether.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/netinet/if_ether.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/sys/sys/socket.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/sys/socket.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/sys/tahoe/math/FP.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/tahoe/math/FP.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/usr/src/usr.bin/pascal/pxp/Version.c" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/usr.bin/pascal/pxp/Version.c" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectId" id="1ig4cC6hOQzIAjkRXOXLMR4XrOi" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="cf.first.check.clang-format" value="false" />
+    <property name="ignore_missing_gitignore" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a94fd665-8004-4ef9-a724-7a9dc1a48f43" name="Default Changelist" comment="" />
+      <created>1602315978267</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1602315978267</updated>
+      <workItem from="1602315980207" duration="285000" />
+      <workItem from="1602465513464" duration="179000" />
+      <workItem from="1602465821372" duration="183000" />
+      <workItem from="1602471876922" duration="1603000" />
+      <workItem from="1602474396083" duration="3000" />
+      <workItem from="1602474428584" duration="183000" />
+      <workItem from="1602474628082" duration="27000" />
+      <workItem from="1602474672273" duration="71000" />
+      <workItem from="1602474759156" duration="31548000" />
+    </task>
+    <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="1922" y="293" key="#Scopes" timestamp="1602473748327">
+      <screen x="1280" y="-120" width="1920" height="1057" />
+    </state>
+    <state x="1922" y="293" key="#Scopes/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602473748327" />
+    <state x="1571" y="10" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1602474468112">
+      <screen x="1280" y="-120" width="1920" height="1057" />
+    </state>
+    <state x="1571" y="10" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602474468112" />
+    <state x="1795" y="316" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1" timestamp="1602316060503">
+      <screen x="1280" y="-120" width="1920" height="1057" />
+    </state>
+    <state x="1795" y="316" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1/0.23.1280.728/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602316060502" />
+    <state x="1725" y="107" key="IDE.errors.dialog" timestamp="1602474724996">
+      <screen x="1280" y="-120" width="1920" height="1057" />
+    </state>
+    <state x="1725" y="107" key="IDE.errors.dialog/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602474724996" />
+    <state x="1584" y="-14" key="SettingsEditor" timestamp="1602474787946">
+      <screen x="1280" y="-120" width="1920" height="1057" />
+    </state>
+    <state x="1584" y="-14" key="SettingsEditor/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602474787946" />
+    <state x="1736" y="206" width="615" height="550" key="find.popup" timestamp="1602582340864">
+      <screen x="1280" y="-120" width="1920" height="1057" />
+    </state>
+    <state x="1736" y="206" width="615" height="550" key="find.popup/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602582340864" />
+    <state x="1736" y="206" width="615" height="490" key="find.popup/0.23.1280.777/1280.-120.1920.1006@1280.-120.1920.1006" timestamp="1602576683492" />
+    <state x="1677" y="223" width="670" height="676" key="search.everywhere.popup" timestamp="1602581249147">
+      <screen x="1280" y="-120" width="1920" height="1057" />
+    </state>
+    <state x="1677" y="223" width="670" height="676" key="search.everywhere.popup/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602581249147" />
+  </component>
+</project>

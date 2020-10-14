@@ -127,9 +127,14 @@ struct	linger {
  * addresses.
  */
 struct sockaddr {
-	u_char	sa_len;			/* total length */
+	u_char	sa_len;			/* total length，表示当前结构的总长度，最长可以表示 255(11111111) */
 	u_char	sa_family;		/* address family */
-	char	sa_data[14];		/* actually longer; address value */
+    /*
+     * actually longer; address value，
+     * 默认 14 个字节，如果 14 个字节不够长，可以提升到 253 个字节
+     * 因为 sa_len 最多只能维护 255 个字节，而 sa_len、sa_family 各占一个字节
+     */
+	char	sa_data[14];
 };
 
 /*

@@ -498,6 +498,9 @@ ether_ifattach(ifp)
 		    sdl->sdl_family == AF_LINK) {
 			sdl->sdl_type = IFT_ETHER;
 			sdl->sdl_alen = ifp->if_addrlen;
+			//将 ifp 转成 struct arpcom 地址，因为 ifp 是struct arpcom 第一个成员变量
+			// 也就是说 ifp 指向的是 struct arpcom 的开始，而 struct arpcom 是一个连续的内存块
+			// c 语言支持这样的转换
 			bcopy((caddr_t)((struct arpcom *)ifp)->ac_enaddr,
 			      LLADDR(sdl), ifp->if_addrlen);
 			break;

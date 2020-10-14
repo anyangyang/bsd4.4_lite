@@ -43,7 +43,11 @@
  */
 struct sl_softc {
 	struct	ifnet sc_if;		/* network-visible interface */
-	struct	ifqueue sc_fastq;	/* interactive output queue */
+    /*
+     * interactive output queue
+     * 除了 ifnet 中的输出队列， sc_fastq 也维护了一个低延迟的队列
+     */
+	struct	ifqueue sc_fastq;
 	struct	tty *sc_ttyp;		/* pointer to tty structure */
 	u_char	*sc_mp;			/* pointer to next available buf char */
 	u_char	*sc_ep;			/* pointer to last available buf char */

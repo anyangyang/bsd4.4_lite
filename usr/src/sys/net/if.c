@@ -63,7 +63,7 @@ ifinit()
 
 	for (ifp = ifnet; ifp; ifp = ifp->if_next)
 		if (ifp->if_snd.ifq_maxlen == 0)
-			ifp->if_snd.ifq_maxlen = ifqmaxlen;
+			ifp->if_snd.ifq_maxlen = ifqmaxlen;  // 给 ifnet 链表中的每个 struct ifnet 的输出队列设置 50 的长度限制
 	if_slowtimo(0);
 }
 
@@ -90,6 +90,8 @@ static char *sprint_d __P((u_int, char *, int));
 /*
  * Attach an interface to the
  * list of "active" interfaces.
+ * 在系统初始化期间， if_attach 方法构造 ifnet list
+ * @param ifp: 已经被设备驱动程序初始化的 ifnet (详情请看 leattach、slattach、loopattach)
  */
 void
 if_attach(ifp)
@@ -98,33 +100,39 @@ if_attach(ifp)
 	unsigned socksize, ifasize;
 	int namelen, unitlen, masklen, ether_output();
 	char workbuf[12], *unitname;
-	register struct ifnet **p = &ifnet;
+	register struct ifnet **p = &ifnet;  // 全局变量 ifnet 维护了当前系统中所有的 struct ifnet
 	register struct sockaddr_dl *sdl;
 	register struct ifaddr *ifa;
 	static int if_indexlim = 8;
 	extern void link_rtrequest();
-
+	// 找到 ifnet 链表中的最后一个节点
 	while (*p)
 		p = &((*p)->if_next);
+	// 找到 ifnet最后一个节点之后，将当前 struct ifnet 挂载到 ifnet 全局变量中
 	*p = ifp;
-	ifp->if_index = ++if_index;
+	ifp->if_index = ++if_index;  // 给当前 struct ifnet 分配一个系统全局唯一的 index 作为唯一标识
+	// 如果 ifnet_addrs 长度为 0，或者当前 ifnet 维护的链表节点数量超过 if_indexlim(初始为8)，则进行扩容
+	// ps：全局变量 ifnet_addrs 维护了当前系统中所有的 struct ifaddr
 	if (ifnet_addrs == 0 || if_index >= if_indexlim) {
 		unsigned n = (if_indexlim <<= 1) * sizeof(ifa);
 		struct ifaddr **q = (struct ifaddr **)
 					malloc(n, M_IFADDR, M_WAITOK);
 		if (ifnet_addrs) {
-			bcopy((caddr_t)ifnet_addrs, (caddr_t)q, n/2);
-			free((caddr_t)ifnet_addrs, M_IFADDR);
+			bcopy((caddr_t)ifnet_addrs, (caddr_t)q, n/2);   // 将老的 ifnet_addrs 中数据复制到新的 ifnet_addrs 中
+            free((caddr_t)ifnet_addrs, M_IFADDR);  // 释放老的 ifnet_addrs
 		}
-		ifnet_addrs = q;
+		ifnet_addrs = q;    // 全局变量 ifnet_addrs 指向新的链表头部
 	}
 	/*
 	 * create a Link Level name for this device
 	 */
+    // 将 ifnet 中 if_unit(数字)转换成字符串存储在 workbuf 中
 	unitname = sprint_d((u_int)ifp->if_unit, workbuf, sizeof(workbuf));
 	namelen = strlen(ifp->if_name);
 	unitlen = strlen(unitname);
+	// 计算 m 在 t 中的偏移量
 #define _offsetof(t, m) ((int)((caddr_t)&((t *)0)->m))
+    // masklen 是 sdl_data 字段在 struct sockaddr_dl 的偏移量加上 unitlen 和 namelen
 	masklen = _offsetof(struct sockaddr_dl, sdl_data[0]) +
 			       unitlen + namelen;
 	socksize = masklen + ifp->if_addrlen;
@@ -132,23 +140,26 @@ if_attach(ifp)
 	socksize = ROUNDUP(socksize);
 	if (socksize < sizeof(*sdl))
 		socksize = sizeof(*sdl);
-	ifasize = sizeof(*ifa) + 2 * socksize;
+	ifasize = sizeof(*ifa) + 2 * socksize;    // if_addr 的长度 + 2 sockaddr_dl 的长度
+	// 分配 ifasize 大小的连续的内存空间是为了保存 ifaddr 和 2 个sockaddr_dl(link_level address 和 mask)
 	if (ifa = (struct ifaddr *)malloc(ifasize, M_IFADDR, M_WAITOK)) {
 		bzero((caddr_t)ifa, ifasize);
 		sdl = (struct sockaddr_dl *)(ifa + 1);
 		sdl->sdl_len = socksize;
-		sdl->sdl_family = AF_LINK;
+		sdl->sdl_family = AF_LINK;    // link_level address
 		bcopy(ifp->if_name, sdl->sdl_data, namelen);
 		bcopy(unitname, namelen + (caddr_t)sdl->sdl_data, unitlen);
 		sdl->sdl_nlen = (namelen += unitlen);
 		sdl->sdl_index = ifp->if_index;
 		sdl->sdl_type = ifp->if_type;
-		ifnet_addrs[if_index - 1] = ifa;
+		ifnet_addrs[if_index - 1] = ifa;  // 全局变量 ifnet_addrs 已经分配有足够的内存空间
 		ifa->ifa_ifp = ifp;
-		ifa->ifa_next = ifp->if_addrlist;
+		ifa->ifa_next = ifp->if_addrlist;  // 将 link_level addr 插入到 ifnet 的 if_addrlist 中
 		ifa->ifa_rtrequest = link_rtrequest;
 		ifp->if_addrlist = ifa;
+		// ifa_addr 字段指向 link_level addr
 		ifa->ifa_addr = (struct sockaddr *)sdl;
+		// 处理 link_level addr mask
 		sdl = (struct sockaddr_dl *)(socksize + (caddr_t)sdl);
 		ifa->ifa_netmask = (struct sockaddr *)sdl;
 		sdl->sdl_len = masklen;
@@ -156,6 +167,8 @@ if_attach(ifp)
 			sdl->sdl_data[--namelen] = 0xff;
 	}
 	/* XXX -- Temporary fix before changing 10 ethernet drivers */
+	// 这里调用 ether_ifattach 的原因是因为 以太网接口的 ifnet 需要先分配好 link_level 的地址，
+	// 以便 ether_ifattach 将硬件地址复制到 struct sockaddr_dl 的 sdl_data 中
 	if (ifp->if_output == ether_output)
 		ether_ifattach(ifp);
 }
@@ -393,6 +406,8 @@ if_qflush(ifq)
  * Handle interface watchdog timer routines.  Called
  * from softclock, we decrement timers (if set) and
  * call the appropriate interface routine on expiration.
+ * 开启一个 interface watchdog timer，当这个 timer 过期时，kernel(内核)
+ * 会调用 watchdog 函数
  */
 void
 if_slowtimo(arg)
