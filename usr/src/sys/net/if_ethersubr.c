@@ -90,6 +90,13 @@ extern	struct ifnet loif;
  * Use trailer local net encapsulation if enough data in first
  * packet leaves a multiple of 512 bytes of data in remainder.
  * Assumes that ifp is actually pointer to arpcom structure.
+ * ether_output 在以太网接口的 ifnet 被初始化时，被赋值给 if_output 方法指针（例如：leattach）
+ * 当网络层协议比如 IP 协议调用 ifnet 中的 if_output 方法时，就会调用到 ether_output 方法
+ * 这个方法对所有对以太网接口都是一样的
+ * @param ifp: 指向当前接口
+ * @param m0: 当前需要发送的数据
+ * @param dst: 目的地址
+ * @param rt0: 路由相关信息
  */
 int
 ether_output(ifp, m0, dst, rt0)
@@ -108,8 +115,9 @@ ether_output(ifp, m0, dst, rt0)
 	int off, len = m->m_pkthdr.len;
 	struct arpcom *ac = (struct arpcom *)ifp;
 
+	// 如果接口无效
 	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING))
-		senderr(ENETDOWN);
+		senderr(ENETDOWN);  // 报告一个错误，senderr 报告一个错误，然后跳转到 bad
 	ifp->if_lastchange = time;
 	if (rt = rt0) {
 		if ((rt->rt_flags & RTF_UP) == 0) {
@@ -300,6 +308,10 @@ bad:
  * Process a received Ethernet packet;
  * the packet is in the mbuf chain m without
  * the ether header, which is provided separately.
+ * @param ifp: 表示以太网帧接口的结构体 ifnet
+ * @param eh: 当前以太网帧头部
+ * @param m: 移除以太网帧头部和CRC(循环冗余校验码之后的帧内容)
+ *
  */
 void
 ether_input(ifp, eh, m)
@@ -312,6 +324,9 @@ ether_input(ifp, eh, m)
 	struct arpcom *ac = (struct arpcom *)ifp;
 	int s;
 
+	/**
+	 * 如果当前的接口无效，则无声地丢弃这个帧
+	 */
 	if ((ifp->if_flags & IFF_UP) == 0) {
 		m_freem(m);
 		return;
@@ -325,7 +340,7 @@ ether_input(ifp, eh, m)
 		m->m_flags |= M_MCAST;
 	if (m->m_flags & (M_BCAST|M_MCAST))
 		ifp->if_imcasts++;
-
+	// 根据以太网帧头部ether_type来选择相应协议的输入队列以及触发相应的协议的软中断
 	switch (eh->ether_type) {
 #ifdef INET
 	case ETHERTYPE_IP:
@@ -448,7 +463,10 @@ ether_input(ifp, eh, m)
 	    return;
 #endif /* ISO || LLC */
 	}
-
+	/**
+	 * 判断选中的协议输入队列是否满，如果满则抛弃该以太网帧，否则将当前数据放到协议输入队列中
+	 * 接下来则依赖相关协议的软中断来处理
+	 */
 	s = splimp();
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);

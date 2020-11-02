@@ -10,6 +10,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a94fd665-8004-4ef9-a724-7a9dc1a48f43" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/usr/src/contrib/emacs-18.57/src/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/emacs-18.57/src/Makefile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/usr/src/contrib/gcc-2.3.3/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/gcc-2.3.3/Makefile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/usr/src/contrib/gdb-4.7.LBL/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/gdb-4.7.LBL/Makefile" afterDir="false" />
@@ -28,17 +29,9 @@
       <change beforePath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/config.H" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/config.H" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/os2/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/os2/Makefile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/x2p/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/contrib/perl-4.036/x2p/Makefile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usr/src/games/chess/Xchess/ScrollText" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/usr/src/sys/hp/dev/device.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/hp/dev/device.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/usr/src/sys/hp300/conf/files.HP300" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/hp300/conf/files.HP300" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/usr/src/sys/hp300/dev/if_le.c" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/hp300/dev/if_le.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usr/src/sys/kern/init_main.c" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/kern/init_main.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usr/src/sys/net/if.c" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/net/if.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usr/src/sys/net/if.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/net/if.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/usr/src/sys/net/if_ethersubr.c" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/net/if_ethersubr.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usr/src/sys/net/if_slvar.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/net/if_slvar.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usr/src/sys/netinet/if_ether.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/netinet/if_ether.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usr/src/sys/sys/socket.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/sys/socket.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/usr/src/sys/tahoe/math/FP.h" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/sys/tahoe/math/FP.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/usr/src/usr.bin/pascal/pxp/Version.c" beforeDir="false" afterPath="$PROJECT_DIR$/usr/src/usr.bin/pascal/pxp/Version.c" afterDir="false" />
     </list>
@@ -83,39 +76,50 @@
       <workItem from="1602474428584" duration="183000" />
       <workItem from="1602474628082" duration="27000" />
       <workItem from="1602474672273" duration="71000" />
-      <workItem from="1602474759156" duration="31548000" />
+      <workItem from="1602474759156" duration="31629000" />
+      <workItem from="1602639848318" duration="7000" />
+      <workItem from="1603245593401" duration="10507000" />
+      <workItem from="1604047947721" duration="38000" />
+      <workItem from="1604048106466" duration="92000" />
+      <workItem from="1604297522173" duration="23000" />
+      <workItem from="1604297548874" duration="151000" />
+      <workItem from="1604297853183" duration="152000" />
+      <workItem from="1604298364440" duration="638000" />
+      <workItem from="1604299361700" duration="48000" />
+      <workItem from="1604299412150" duration="4000" />
+      <workItem from="1604299426386" duration="44000" />
+      <workItem from="1604302251153" duration="196000" />
+      <workItem from="1604302468437" duration="74000" />
     </task>
     <servers />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
   <component name="WindowStateProjectService">
-    <state x="1922" y="293" key="#Scopes" timestamp="1602473748327">
-      <screen x="1280" y="-120" width="1920" height="1057" />
-    </state>
-    <state x="1922" y="293" key="#Scopes/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602473748327" />
-    <state x="1571" y="10" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1602474468112">
-      <screen x="1280" y="-120" width="1920" height="1057" />
-    </state>
-    <state x="1571" y="10" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602474468112" />
-    <state x="1795" y="316" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1" timestamp="1602316060503">
-      <screen x="1280" y="-120" width="1920" height="1057" />
-    </state>
-    <state x="1795" y="316" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1/0.23.1280.728/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602316060502" />
-    <state x="1725" y="107" key="IDE.errors.dialog" timestamp="1602474724996">
-      <screen x="1280" y="-120" width="1920" height="1057" />
-    </state>
-    <state x="1725" y="107" key="IDE.errors.dialog/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602474724996" />
-    <state x="1584" y="-14" key="SettingsEditor" timestamp="1602474787946">
-      <screen x="1280" y="-120" width="1920" height="1057" />
-    </state>
-    <state x="1584" y="-14" key="SettingsEditor/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602474787946" />
-    <state x="1736" y="206" width="615" height="550" key="find.popup" timestamp="1602582340864">
-      <screen x="1280" y="-120" width="1920" height="1057" />
-    </state>
-    <state x="1736" y="206" width="615" height="550" key="find.popup/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602582340864" />
-    <state x="1736" y="206" width="615" height="490" key="find.popup/0.23.1280.777/1280.-120.1920.1006@1280.-120.1920.1006" timestamp="1602576683492" />
-    <state x="1677" y="223" width="670" height="676" key="search.everywhere.popup" timestamp="1602581249147">
-      <screen x="1280" y="-120" width="1920" height="1057" />
-    </state>
-    <state x="1677" y="223" width="670" height="676" key="search.everywhere.popup/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" timestamp="1602581249147" />
+    <state x="1922" y="293" key="#Scopes" />
+    <state x="1922" y="293" key="#Scopes/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" />
+    <state x="1571" y="10" key="#com.intellij.execution.impl.EditConfigurationsDialog" />
+    <state x="1571" y="10" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" />
+    <state x="1795" y="316" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1" />
+    <state x="1795" y="316" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1/0.23.1280.728/1280.-120.1920.1057@1280.-120.1920.1057" />
+    <state x="1725" y="107" key="IDE.errors.dialog" />
+    <state x="1725" y="107" key="IDE.errors.dialog/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" />
+    <state x="1584" y="-14" key="SettingsEditor" />
+    <state x="1584" y="-14" key="SettingsEditor/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" />
+    <state x="1736" y="206" width="615" height="550" key="find.popup" />
+    <state x="1736" y="206" width="615" height="550" key="find.popup/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" />
+    <state x="1736" y="206" width="615" height="490" key="find.popup/0.23.1280.777/1280.-120.1920.1006@1280.-120.1920.1006" />
+    <state x="1677" y="223" width="670" height="676" key="search.everywhere.popup" />
+    <state x="1677" y="223" width="670" height="676" key="search.everywhere.popup/0.23.1280.726/1280.-120.1920.1057@1280.-120.1920.1057" />
   </component>
 </project>

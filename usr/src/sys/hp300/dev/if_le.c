@@ -630,6 +630,12 @@ lerint(unit)
 	le->sc_rmd = bix;
 }
 
+/**
+ * @param unit: 指向当前接收到帧的接口网卡
+ * @param buffer: 指向当前接收到的以太网帧
+ * @param len: 帧长度（包含以太网帧头部和CRC<循环冗余校验码>）
+ *
+ */
 leread(unit, buf, len)
 	int unit;
 	char *buf;
@@ -641,10 +647,10 @@ leread(unit, buf, len)
 	int off, resid, flags;
 
 	le->sc_if.if_ipackets++;
-	et = (struct ether_header *)buf;
-	et->ether_type = ntohs((u_short)et->ether_type);
+	et = (struct ether_header *)buf;  // ether_header 用于构造以太网帧头部
+	et->ether_type = ntohs((u_short)et->ether_type);   // 将ether_type的值从网络字节序转换成主机字节序
 	/* adjust input length to account for header and CRC */
-	len = len - sizeof(struct ether_header) - 4;
+	len = len - sizeof(struct ether_header) - 4;   // 计算移除以太网帧头部和CRC循环冗余校验码之后的长度
 
 #define	ledataaddr(et, off, type)	((type)(((caddr_t)((et)+1)+(off))))
 	if (et->ether_type >= ETHERTYPE_TRAIL &&
@@ -659,7 +665,7 @@ leread(unit, buf, len)
 		len = off + resid;
 	} else
 		off = 0;
-
+	// 如果帧数据的长度太短，判断这不是一个合法的帧，处理统计相关信息、报告一个错误，然后丢弃这个帧
 	if (len <= 0) {
 		if (ledebug)
 			log(LOG_WARNING,
@@ -669,6 +675,7 @@ leread(unit, buf, len)
 		le->sc_if.if_ierrors++;
 		return;
 	}
+	// 判断以太网帧的目的地址是否是广播地址或这多播地址（广播地址 48 bit 全都为1， 并且广播地址是多播地址的一个特殊情况）
 	flags = 0;
 	if (bcmp((caddr_t)etherbroadcastaddr,
 	    (caddr_t)et->ether_dhost, sizeof(etherbroadcastaddr)) == 0)
@@ -706,10 +713,12 @@ leread(unit, buf, len)
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
+	// 将数据从 buf 复制到  mbuf 中
 	m = m_devget((char *)(et + 1), len, off, &le->sc_if, 0);
 	if (m == 0)
 		return;
 	m->m_flags |= flags;
+	// if_ethersubr.c
 	ether_input(&le->sc_if, et, m);
 }
 
