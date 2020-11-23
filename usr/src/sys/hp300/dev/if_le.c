@@ -409,6 +409,7 @@ leinit(unit)
  * Start output on interface.  Get another datagram to send
  * off of the interface queue, and copy it to the interface
  * before starting the output.
+ * 当前方法会假设外层已经设置阻塞其他设备中断
  */
 lestart(ifp)
 	struct ifnet *ifp;
@@ -417,19 +418,19 @@ lestart(ifp)
 	register struct letmd *tmd;
 	register struct mbuf *m;
 	int len;
-
+    // 接口已经初始化完成，如果初始化未完成，则直接返回
 	if ((le->sc_if.if_flags & IFF_RUNNING) == 0)
 		return (0);
 	tmd = &le->sc_r2->ler2_tmd[le->sc_tmd];
 	do {
-		if (tmd->tmd1 & LE_OWN) {
+		if (tmd->tmd1 & LE_OWN) {   // ps： 硬件相关
 			le->sc_xown2++;
 			return (0);
 		}
-		IF_DEQUEUE(&le->sc_if.if_snd, m);
+		IF_DEQUEUE(&le->sc_if.if_snd, m);   // 从接口输出队列取出一个帧
 		if (m == 0)
 			return (0);
-		len = leput(le->sc_r2->ler2_tbuf[le->sc_tmd], m);
+		len = leput(le->sc_r2->ler2_tbuf[le->sc_tmd], m);  // 将以太网帧 m 复制到网卡的 buffer 中
 #if NBPFILTER > 0
 		/* 
 		 * If bpf is listening on this interface, let it 
@@ -448,11 +449,15 @@ lestart(ifp)
 			tmd = le->sc_r2->ler2_tmd;
 		} else
 			tmd++;
-	} while (++le->sc_txcnt < LETBUF);
-	le->sc_if.if_flags |= IFF_OACTIVE;
+	} while (++le->sc_txcnt < LETBUF);   // LETBUF 是硬件可用的传输缓存， sc_txcnt 跟踪已经使用的缓存
+	le->sc_if.if_flags |= IFF_OACTIVE;   // 将网卡设备标记为 active (busy)
 	return (0);
 }
 
+
+/**
+ * 中断触发
+ */
 leintr(unit)
 	register int unit;
 {
@@ -496,7 +501,7 @@ leintr(unit)
 		return(1);
 	}
 	if (stat & LE_RINT)
-		lerint(unit);
+		lerint(unit);   // 读取以太网帧内容
 	if (stat & LE_TINT)
 		lexint(unit);
 	return(1);
@@ -646,7 +651,7 @@ leread(unit, buf, len)
     	struct mbuf *m;
 	int off, resid, flags;
 
-	le->sc_if.if_ipackets++;
+	le->sc_if.if_ipackets++;   // 统计当前接口接收到的包数量+1
 	et = (struct ether_header *)buf;  // ether_header 用于构造以太网帧头部
 	et->ether_type = ntohs((u_short)et->ether_type);   // 将ether_type的值从网络字节序转换成主机字节序
 	/* adjust input length to account for header and CRC */
@@ -771,8 +776,8 @@ leioctl(ifp, cmd, data)
 		case AF_INET:
 			leinit(ifp->if_unit);	/* before arpwhohas */
 			((struct arpcom *)ifp)->ac_ipaddr =
-				IA_SIN(ifa)->sin_addr;
-			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
+				IA_SIN(ifa)->sin_addr;     // 将分配给的当前接口的 IP 地址放到 arpcom 的 ac_ipaddr 变量中
+			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);   // 免费arp，用于判断当前 ip 地址是否冲突
 			break;
 #endif
 #ifdef NS

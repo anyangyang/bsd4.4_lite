@@ -154,6 +154,14 @@ extern	struct ifnet loif;
 /*
  * Generic internet control operations (ioctl's).
  * Ifp is 0 if not an interface-specific ioctl.
+ * @Param so: 指向发送 ioctl 的 socket
+ * @Param cmd: 当前指令
+ * @param data: 用于保存当前指令的返回值
+ * @Param ifp:  指向 ifnet 或者为 null， 如果 ifp 不为 null,则会从全局变量 in_ifaddr
+ * 中匹配出指向该 ifp 的 in_ifaddr 接口。如果 ifp 为 null, 那么 cmd 不会匹配当前方法中的
+ * 第一个 switch 语句的任意一个 case，也不会匹配任意第二个 switch 中非默认 case
+ *
+ * ps: 当前方法中共存在两个 switch，第一个 switch 的作用是校验 cmd 在被第二个 switch 处理时需要的条件是否被满足
  */
 /* ARGSUSED */
 in_control(so, cmd, data, ifp)
@@ -173,6 +181,7 @@ in_control(so, cmd, data, ifp)
 
 	/*
 	 * Find address for this interface, if it exists.
+	 * in_ifaddr 是一个全局变量，维护当前系统分配的所有 internet 地址
 	 */
 	if (ifp)
 		for (ia = in_ifaddr; ia; ia = ia->ia_next)
@@ -183,6 +192,7 @@ in_control(so, cmd, data, ifp)
 
 	case SIOCAIFADDR:
 	case SIOCDIFADDR:
+	    // 搜索当前接口 ifnet 中与参数中地址一样的 ifaddr 节点
 		if (ifra->ifra_addr.sin_family == AF_INET)
 		    for (oia = ia; ia; ia = ia->ia_next) {
 			if (ia->ia_ifp == ifp  &&
@@ -196,17 +206,21 @@ in_control(so, cmd, data, ifp)
 	case SIOCSIFADDR:
 	case SIOCSIFNETMASK:
 	case SIOCSIFDSTADDR:
+	    // 如果不是超级用户创建的 socket，则被禁止
 		if ((so->so_state & SS_PRIV) == 0)
 			return (EPERM);
 
 		if (ifp == 0)
 			panic("in_control");
+		// 如果 ia 是 null，即当前接口 ifp 未被分配过 ip地址
 		if (ia == (struct in_ifaddr *)0) {
+		    // 分配一个 in_ifaddr 用于存放即将分配的 IP 地址
 			oia = (struct in_ifaddr *)
 				malloc(sizeof *oia, M_IFADDR, M_WAITOK);
 			if (oia == (struct in_ifaddr *)NULL)
 				return (ENOBUFS);
-			bzero((caddr_t)oia, sizeof *oia);
+			bzero((caddr_t)oia, sizeof *oia);   // 将新分配的内内存空间统一设置为 0
+			// 找到 in_ifaddr 链表的尾部，将新分配的 in_ifaddr 链接到链表中
 			if (ia = in_ifaddr) {
 				for ( ; ia->ia_next; ia = ia->ia_next)
 					continue;
@@ -214,12 +228,14 @@ in_control(so, cmd, data, ifp)
 			} else
 				in_ifaddr = oia;
 			ia = oia;
+			// 将新分配的 in_ifaddr 链接到 ifnet 地址链表的尾部
 			if (ifa = ifp->if_addrlist) {
 				for ( ; ifa->ifa_next; ifa = ifa->ifa_next)
 					continue;
 				ifa->ifa_next = (struct ifaddr *) ia;
 			} else
 				ifp->if_addrlist = (struct ifaddr *) ia;
+            // 将 in_ifaddr 中的数据初始化好
 			ia->ia_ifa.ifa_addr = (struct sockaddr *)&ia->ia_addr;
 			ia->ia_ifa.ifa_dstaddr
 					= (struct sockaddr *)&ia->ia_dstaddr;
@@ -249,6 +265,10 @@ in_control(so, cmd, data, ifp)
 			return (EADDRNOTAVAIL);
 		break;
 	}
+
+	/**
+	 * 第二个 switch
+	 */
 	switch (cmd) {
 
 	case SIOCGIFADDR:
@@ -270,7 +290,7 @@ in_control(so, cmd, data, ifp)
 	case SIOCGIFNETMASK:
 		*((struct sockaddr_in *)&ifr->ifr_addr) = ia->ia_sockmask;
 		break;
-
+    // 点对点网络设置链路端点地址
 	case SIOCSIFDSTADDR:
 		if ((ifp->if_flags & IFF_POINTOPOINT) == 0)
 			return (EINVAL);
@@ -281,24 +301,25 @@ in_control(so, cmd, data, ifp)
 			ia->ia_dstaddr = oldaddr;
 			return (error);
 		}
+		// 如果之前已经路由信息已经安装过
 		if (ia->ia_flags & IFA_ROUTE) {
 			ia->ia_ifa.ifa_dstaddr = (struct sockaddr *)&oldaddr;
-			rtinit(&(ia->ia_ifa), (int)RTM_DELETE, RTF_HOST);
+			rtinit(&(ia->ia_ifa), (int)RTM_DELETE, RTF_HOST);   // 删除老地址的路由信息
 			ia->ia_ifa.ifa_dstaddr =
 					(struct sockaddr *)&ia->ia_dstaddr;
-			rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_HOST|RTF_UP);
+			rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_HOST|RTF_UP);  // 初始化新地址的路由信息
 		}
 		break;
-
+	// 设置广播地址
 	case SIOCSIFBRDADDR:
 		if ((ifp->if_flags & IFF_BROADCAST) == 0)
 			return (EINVAL);
 		ia->ia_broadaddr = *(struct sockaddr_in *)&ifr->ifr_broadaddr;
 		break;
-
+	// 设置IP地址，
 	case SIOCSIFADDR:
 		return (in_ifinit(ifp, ia,
-		    (struct sockaddr_in *) &ifr->ifr_addr, 1));
+		    (struct sockaddr_in *) &ifr->ifr_addr, 1));  // IP 地址已经在 ifr->ifr_addr 中了
 
 	case SIOCSIFNETMASK:
 		i = ifra->ifra_addr.sin_addr.s_addr;
@@ -306,10 +327,15 @@ in_control(so, cmd, data, ifp)
 		break;
 
 	case SIOCAIFADDR:
+	    // 因为 SIOCAIFADDR 可以给接口增加一个新地址，或者改变其中一个地址关联的信息
+	    // maskIsNew、hostIsNew 可以用来跟踪什么内容被改变了，以便在当前命令处理的末尾
+	    // 可以由这个这两个字段来决定是否要更新路由
 		maskIsNew = 0;
-		hostIsNew = 1;
+		hostIsNew = 1;    // 默认是更新地址
 		error = 0;
+		// 在当前方法的第一个 switch 中可能没有找到 ia，这里 ia 可能等于 0
 		if (ia->ia_addr.sin_family == AF_INET) {
+		    // 判断是否是更新地址，如果不是，则将 hostIsNew 更新为 0
 			if (ifra->ifra_addr.sin_len == 0) {
 				ifra->ifra_addr = ia->ia_addr;
 				hostIsNew = 0;
@@ -317,6 +343,7 @@ in_control(so, cmd, data, ifp)
 					       ia->ia_addr.sin_addr.s_addr)
 				hostIsNew = 0;
 		}
+		// 如果网络掩码存在
 		if (ifra->ifra_mask.sin_len) {
 			in_ifscrub(ifp, ia);
 			ia->ia_sockmask = ifra->ifra_mask;
@@ -332,14 +359,16 @@ in_control(so, cmd, data, ifp)
 		}
 		if (ifra->ifra_addr.sin_family == AF_INET &&
 		    (hostIsNew || maskIsNew))
-			error = in_ifinit(ifp, ia, &ifra->ifra_addr, 0);
+			error = in_ifinit(ifp, ia, &ifra->ifra_addr, 0);   //更新信息
+		// 如果当前接口支持多播
 		if ((ifp->if_flags & IFF_BROADCAST) &&
 		    (ifra->ifra_broadaddr.sin_family == AF_INET))
 			ia->ia_broadaddr = ifra->ifra_broadaddr;
 		return (error);
 
 	case SIOCDIFADDR:
-		in_ifscrub(ifp, ia);
+		in_ifscrub(ifp, ia);  // 清除路由信息
+		// 在 ifnet 的地址链表中清除 ia
 		if ((ifa = ifp->if_addrlist) == (struct ifaddr *)ia)
 			ifp->if_addrlist = ifa->ifa_next;
 		else {
@@ -351,6 +380,7 @@ in_control(so, cmd, data, ifp)
 			else
 				printf("Couldn't unlink inifaddr from ifp\n");
 		}
+		// 在全局的地址链表中删除当前地址
 		oia = ia;
 		if (oia == (ia = in_ifaddr))
 			in_ifaddr = ia->ia_next;
@@ -362,12 +392,14 @@ in_control(so, cmd, data, ifp)
 			else
 				printf("Didn't unlink inifadr from list\n");
 		}
-		IFAFREE((&oia->ia_ifa));
+		IFAFREE((&oia->ia_ifa));   // 释放给该地址分配的内存空间
 		break;
 
 	default:
 		if (ifp == 0 || ifp->if_ioctl == 0)
 			return (EOPNOTSUPP);
+		// 如果 ifp<Struct ifnet> 存在，并且 ifp<Struct ifnet>中的 if_ioctl 存在。
+		// 则进入 if_ioctl 中进行设备相关的处理
 		return ((*ifp->if_ioctl)(ifp, cmd, data));
 	}
 	return (0);
@@ -381,7 +413,7 @@ in_ifscrub(ifp, ia)
 	register struct ifnet *ifp;
 	register struct in_ifaddr *ia;
 {
-
+    // IFA_ROUTE 表示 routing entry installed
 	if ((ia->ia_flags & IFA_ROUTE) == 0)
 		return;
 	if (ifp->if_flags & (IFF_LOOPBACK|IFF_POINTOPOINT))
@@ -399,10 +431,10 @@ in_ifinit(ifp, ia, sin, scrub)
 	register struct ifnet *ifp;
 	register struct in_ifaddr *ia;
 	struct sockaddr_in *sin;
-	int scrub;
+	int scrub;    // 标识如果当前接口存在路由信息，是否要删除
 {
 	register u_long i = ntohl(sin->sin_addr.s_addr);
-	struct sockaddr_in oldaddr;
+	struct sockaddr_in oldaddr;   // 存储老的地址，在 IP 地址设置过程中，如果出错，则需要将老地址恢复
 	int s = splimp(), flags = RTF_UP, error, ether_output();
 
 	oldaddr = ia->ia_addr;
@@ -411,6 +443,10 @@ in_ifinit(ifp, ia, sin, scrub)
 	 * Give the interface a chance to initialize
 	 * if this is its first address,
 	 * and to validate the address if necessary.
+	 * 如果 ifnet 中 if_ioctl 存在，则调用
+	 * ps：if_ioctl 是 ifnet 初始化时，放上去的 leioctl、slioctl、loioctl
+	 *
+	 *  这里调用 leioctl 主要是用于初始化一下数据
 	 */
 	if (ifp->if_ioctl &&
 	    (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, (caddr_t)ia))) {
@@ -418,16 +454,19 @@ in_ifinit(ifp, ia, sin, scrub)
 		ia->ia_addr = oldaddr;
 		return (error);
 	}
+	// 如果是以太网接口， arp_rtrequest 被选中
 	if (ifp->if_output == ether_output) { /* XXX: Another Kludge */
 		ia->ia_ifa.ifa_rtrequest = arp_rtrequest;
 		ia->ia_ifa.ifa_flags |= RTF_CLONING;
 	}
 	splx(s);
+	// 清除接口存在的路由信息
 	if (scrub) {
 		ia->ia_ifa.ifa_addr = (struct sockaddr *)&oldaddr;
-		in_ifscrub(ifp, ia);
+		in_ifscrub(ifp, ia);   // 将 oldaddr 的所有地址设置为无效
 		ia->ia_ifa.ifa_addr = (struct sockaddr *)&ia->ia_addr;
 	}
+	//
 	if (IN_CLASSA(i))
 		ia->ia_netmask = IN_CLASSA_NET;
 	else if (IN_CLASSB(i))
@@ -444,31 +483,36 @@ in_ifinit(ifp, ia, sin, scrub)
 		ia->ia_sockmask.sin_addr.s_addr = htonl(ia->ia_subnetmask);
 	} else
 		ia->ia_netmask &= ia->ia_subnetmask;
-	ia->ia_net = i & ia->ia_netmask;
-	ia->ia_subnet = i & ia->ia_subnetmask;
+	ia->ia_net = i & ia->ia_netmask;     // 提取网络号
+	ia->ia_subnet = i & ia->ia_subnetmask;  // 提取子网号
 	in_socktrim(&ia->ia_sockmask);
 	/*
 	 * Add route for the network.
+	 * 为新地址建立路由信息
 	 */
 	ia->ia_ifa.ifa_metric = ifp->if_metric;
+	// 如果当前接口支持广播
 	if (ifp->if_flags & IFF_BROADCAST) {
 		ia->ia_broadaddr.sin_addr.s_addr =
 			htonl(ia->ia_subnet | ~ia->ia_subnetmask);
 		ia->ia_netbroadcast.s_addr =
 			htonl(ia->ia_net | ~ ia->ia_netmask);
-	} else if (ifp->if_flags & IFF_LOOPBACK) {
+	}
+	else if (ifp->if_flags & IFF_LOOPBACK) {
 		ia->ia_ifa.ifa_dstaddr = ia->ia_ifa.ifa_addr;
 		flags |= RTF_HOST;
 	} else if (ifp->if_flags & IFF_POINTOPOINT) {
+	    // 如果是点对点，并且还没有链路对端的地址，则直接返回
 		if (ia->ia_dstaddr.sin_family != AF_INET)
 			return (0);
 		flags |= RTF_HOST;
 	}
 	if ((error = rtinit(&(ia->ia_ifa), (int)RTM_ADD, flags)) == 0)
-		ia->ia_flags |= IFA_ROUTE;
+		ia->ia_flags |= IFA_ROUTE;    // route is installed
 	/*
 	 * If the interface supports multicast, join the "all hosts"
 	 * multicast group on that interface.
+	 * ps: 12 chapter
 	 */
 	if (ifp->if_flags & IFF_MULTICAST) {
 		struct in_addr addr;

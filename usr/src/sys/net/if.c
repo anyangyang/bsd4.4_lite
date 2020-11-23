@@ -537,6 +537,7 @@ ifioctl(so, cmd, data, p)
 		if (so->so_proto == 0)
 			return (EOPNOTSUPP);
 #ifndef COMPAT_43
+		// 协议相关的处理, 如果是 udp 则会调用 udp_usrreq, tcp 则调用 tcp_usrreq
 		return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,
 			cmd, data, ifp));
 #else
@@ -613,21 +614,25 @@ ifconf(cmd, data)
 	struct ifreq ifr, *ifrp;
 	int space = ifc->ifc_len, error = 0;
 
-	ifrp = ifc->ifc_req;
+	ifrp = ifc->ifc_req;   // 表示 ifconf 中的 buffer
 	ep = ifr.ifr_name + sizeof (ifr.ifr_name) - 2;
+	// 遍历全局变量 ifnet, ifnet 是一个链表，维护了当前系统中所有的接口表示
 	for (; space > sizeof (ifr) && ifp; ifp = ifp->if_next) {
+	    // 将接口的名字复制到 struct ifreq
 		strncpy(ifr.ifr_name, ifp->if_name, sizeof (ifr.ifr_name) - 2);
 		for (cp = ifr.ifr_name; cp < ep && *cp; cp++)
 			continue;
-		*cp++ = '0' + ifp->if_unit; *cp = '\0';
-		if ((ifa = ifp->if_addrlist) == 0) {
+		*cp++ = '0' + ifp->if_unit; *cp = '\0';   // unit 作为 name 的一部分
+		if ((ifa = ifp->if_addrlist) == 0) {      // 如果当前接口暂无地址，则
 			bzero((caddr_t)&ifr.ifr_addr, sizeof(ifr.ifr_addr));
+			// copyout 将数据从 kernel-space 复制到 user-space
 			error = copyout((caddr_t)&ifr, (caddr_t)ifrp,
 			    sizeof (ifr));
 			if (error)
 				break;
-			space -= sizeof (ifr), ifrp++;
-		} else 
+			space -= sizeof (ifr), ifrp++;  // 指向在一个地址
+		} else
+		    // 至少存在一个地址
 		    for ( ; space > sizeof (ifr) && ifa; ifa = ifa->ifa_next) {
 			register struct sockaddr *sa = ifa->ifa_addr;
 #ifdef COMPAT_43

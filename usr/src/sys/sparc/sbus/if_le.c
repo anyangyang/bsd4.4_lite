@@ -882,16 +882,17 @@ leioctl(ifp, cmd, data)
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
-
+    // 设置地址时的处理
 	case SIOCSIFADDR:
 		ifa = (struct ifaddr *)data;
-		ifp->if_flags |= IFF_UP;
+		ifp->if_flags |= IFF_UP;  // 接口被设置为 up
 		switch (ifa->ifa_addr->sa_family) {
 #ifdef INET
 		case AF_INET:
 			(void)leinit(ifp->if_unit);	/* before arpwhohas */
 			((struct arpcom *)ifp)->ac_ipaddr =
 				IA_SIN(ifa)->sin_addr;
+			// gratuitous ARP， 校验地址是否冲突
 			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
 			break;
 #endif

@@ -89,12 +89,12 @@ domaininit()
 				(*pr->pr_init)();
 	}
 
-if (max_linkhdr < 16)		/* XXX */
-max_linkhdr = 16;
-	max_hdr = max_linkhdr + max_protohdr;
-	max_datalen = MHLEN - max_hdr;
-	timeout(pffasttimo, (void *)0, 1);
-	timeout(pfslowtimo, (void *)0, 1);
+    if (max_linkhdr < 16)		/* XXX */
+        max_linkhdr = 16;
+    max_hdr = max_linkhdr + max_protohdr;
+    max_datalen = MHLEN - max_hdr;
+    timeout(pffasttimo, (void *)0, 1);
+    timeout(pfslowtimo, (void *)0, 1);
 }
 
 struct protosw *

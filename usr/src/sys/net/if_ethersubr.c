@@ -119,13 +119,16 @@ ether_output(ifp, m0, dst, rt0)
 	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING))
 		senderr(ENETDOWN);  // 报告一个错误，senderr 报告一个错误，然后跳转到 bad
 	ifp->if_lastchange = time;
-	if (rt = rt0) {
-		if ((rt->rt_flags & RTF_UP) == 0) {
-			if (rt0 = rt = rtalloc1(dst, 1))
+	// 如果 if_output 调用 ether_output，则 if_output 会寻找到一条路由信息，传给 ether_output
+	// 如果是 BPF 调用 ether_output，则 rt0 可以为 null
+	if (rt = rt0) {  // 如果路由信息存在
+		if ((rt->rt_flags & RTF_UP) == 0) {   // 如果当前路由记录无效
+			if (rt0 = rt = rtalloc1(dst, 1))  // 重新根据协议相关的目的地址获取路由信息
 				rt->rt_refcnt--;
 			else 
 				senderr(EHOSTUNREACH);
 		}
+		// 如果下一跳是网关
 		if (rt->rt_flags & RTF_GATEWAY) {
 			if (rt->rt_gwroute == 0)
 				goto lookup;
@@ -136,18 +139,26 @@ ether_output(ifp, m0, dst, rt0)
 					senderr(EHOSTUNREACH);
 			}
 		}
+		// RTF_REJECT 用于当 dest 没有响应 ARP 请求时，取消发送到 dest 的 package
 		if (rt->rt_flags & RTF_REJECT)
 			if (rt->rt_rmx.rmx_expire == 0 ||
 			    time.tv_sec < rt->rt_rmx.rmx_expire)
 				senderr(rt == rt0 ? EHOSTDOWN : EHOSTUNREACH);
 	}
+	/**
+	 * 将相应的上层协议(IP协议)地址转换成相应的硬件地址
+	 */
 	switch (dst->sa_family) {
 
 #ifdef INET
 	case AF_INET:
+	    // 通过 arp 协议将 rt 对应的ip地址转换成硬件地址，如果转换成功，那么硬件地址会被塞到 edst 中。
+	    // 如果 dst 地址相对的硬件地址在 ARP 协议的缓存中，则会返回 1，以便进一步处理。否则，需要等到 arp 协议
+	    // 获取硬件地址之后，从 in_arpinput 通过 ifnet 调用 if_output --> ether_output
 		if (!arpresolve(ac, rt, m, dst, edst))
 			return (0);	/* if not yet resolved */
 		/* If broadcasting on a simplex interface, loopback a copy */
+		// 如果当前消息是广播消息，但是当前接口不能接收自己发的包，那么为了让自己能够接收到消息，则通过 looutput
 		if ((m->m_flags & M_BCAST) && (ifp->if_flags & IFF_SIMPLEX))
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		off = m->m_pkthdr.len - m->m_len;
@@ -264,19 +275,23 @@ ether_output(ifp, m0, dst, rt0)
 
 
 	if (mcopy)
-		(void) looutput(ifp, mcopy, dst, rt);
+		(void) looutput(ifp, mcopy, dst, rt);  // 如果是广播消息，并且当前接口不能接收自己发送的数据，则将消息转发给自己一份
 	/*
 	 * Add local net header.  If no space in first mbuf,
 	 * allocate another.
 	 */
+    // 在 m 中分配以太网头部空间，如果第一个 mbuf 剩余空间不够以太网头部大小，则分配一个新的 mbuf
 	M_PREPEND(m, sizeof (struct ether_header), M_DONTWAIT);
 	if (m == 0)
 		senderr(ENOBUFS);
 	eh = mtod(m, struct ether_header *);
-	type = htons((u_short)type);
+	type = htons((u_short)type);   // 主机序转成网络序
+	// 将 type 设置到以太网帧头部
 	bcopy((caddr_t)&type,(caddr_t)&eh->ether_type,
 		sizeof(eh->ether_type));
+    // 将目的硬件地址设置到以太网帧头部
  	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
+ 	// 将当前接口的硬件地址设置到以太网帧的头部
  	bcopy((caddr_t)ac->ac_enaddr, (caddr_t)eh->ether_shost,
 	    sizeof(eh->ether_shost));
 	s = splimp();
@@ -284,18 +299,19 @@ ether_output(ifp, m0, dst, rt0)
 	 * Queue message on interface, and start output if interface
 	 * not yet active.
 	 */
+	// 如果队列满，则将当前帧丢弃
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
 		splx(s);
 		senderr(ENOBUFS);
 	}
-	IF_ENQUEUE(&ifp->if_snd, m);
+	IF_ENQUEUE(&ifp->if_snd, m);   // 将帧放到当前接口的输出队列中
 	if ((ifp->if_flags & IFF_OACTIVE) == 0)
-		(*ifp->if_start)(ifp);
+		(*ifp->if_start)(ifp);    // 如果当前接口不是 active 状态，则调用 lestart 方法取处理帧输出
 	splx(s);
-	ifp->if_obytes += len + sizeof (struct ether_header);
+	ifp->if_obytes += len + sizeof (struct ether_header);   // 统计输出字节数
 	if (m->m_flags & M_MCAST)
-		ifp->if_omcasts++;
+		ifp->if_omcasts++;  // 统计多播
 	return (error);
 
 bad:
@@ -311,7 +327,11 @@ bad:
  * @param ifp: 表示以太网帧接口的结构体 ifnet
  * @param eh: 当前以太网帧头部
  * @param m: 移除以太网帧头部和CRC(循环冗余校验码之后的帧内容)
- *
+ * 根据以太网帧头部的协议类型（这里兼容处理 Internet 协议族和 ISO 以及 LLC 协议族）
+ * 将当前接收到的以太网帧内容(param: m) 放到相应协议的输入队列中, 并触发一个软中断
+ * 允许将包放到相应协议的输入队列的条件
+ * 1、当前接口是有效的
+ * 2、相应的协议队列未满
  */
 void
 ether_input(ifp, eh, m)

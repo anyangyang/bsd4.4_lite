@@ -78,7 +78,9 @@ void	eoninput(), eonctlinput(), eonprotoinit();
 
 extern	struct domain inetdomain;
 
+// internet 协议族 domain 的协议数组初始化
 struct protosw inetsw[] = {
+// 申明仅被内核访问的管理函数
 { 0,		&inetdomain,	0,		0,
   0,		ip_output,	0,		0,
   0,
@@ -94,6 +96,7 @@ struct protosw inetsw[] = {
   tcp_usrreq,
   tcp_init,	tcp_fasttimo,	tcp_slowtimo,	tcp_drain,
 },
+// 提供对IP协议的访问。处理任何接收到的不能识别协议的包
 { SOCK_RAW,	&inetdomain,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
   rip_input,	rip_output,	0,		rip_ctloutput,
   rip_usrreq,
@@ -132,6 +135,7 @@ struct protosw inetsw[] = {
 },
 #endif
 	/* raw wildcard */
+// 默认 raw_protocol, 当 pffindproto 没有找到匹配的协议 protosw 时，返回这个
 { SOCK_RAW,	&inetdomain,	0,		PR_ATOMIC|PR_ADDR,
   rip_input,	rip_output,	0,		rip_ctloutput,
   rip_usrreq,

@@ -475,7 +475,6 @@ udp_usrreq(so, req, m, addr, control)
 	struct inpcb *inp = sotoinpcb(so);
 	int error = 0;
 	int s;
-
 	if (req == PRU_CONTROL)
 		return (in_control(so, (int)m, (caddr_t)addr,
 			(struct ifnet *)control));

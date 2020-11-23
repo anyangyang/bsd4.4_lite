@@ -38,18 +38,26 @@
  * is allocated for each interface with an Internet address.
  * The ifaddr structure contains the protocol-independent part
  * of the structure and is assumed to be first.
+ * 每一次分配给接口的 IP 地址，都会以 in_ifaddr 的形式，连接到接口表示的 ifnet 的 if_addrlist 链表上
  */
 struct in_ifaddr {
 	struct	ifaddr ia_ifa;		/* protocol-independent info */
-#define	ia_ifp		ia_ifa.ifa_ifp
-#define ia_flags	ia_ifa.ifa_flags
+#define	ia_ifp		ia_ifa.ifa_ifp    // 简化对 ifaddr 中的 ifa_ifp<ifnet> 的访问
+#define ia_flags	ia_ifa.ifa_flags  // 简化对 ifaddr 中的 ifa_flags 的访问
 					/* ia_{,sub}net{,mask} in host order */
+    // 网络号， 主机序存储
 	u_long	ia_net;			/* network number of interface */
+	// 网络掩码，
 	u_long	ia_netmask;		/* mask of net part */
+	// 子网号
 	u_long	ia_subnet;		/* subnet number, including net */
+	// 子网掩码
 	u_long	ia_subnetmask;		/* mask of subnet part */
+	// 网络序存出
 	struct	in_addr ia_netbroadcast; /* to recognize net broadcasts */
+	// ia_next 维护了 internet address 的 linked-list，可通过权利变量 in_ifaddr 访问
 	struct	in_ifaddr *ia_next;	/* next in list of internet addresses */
+	// 地址。网络序存储
 	struct	sockaddr_in ia_addr;	/* reserve space for interface name */
 	struct	sockaddr_in ia_dstaddr; /* reserve space for broadcast addr */
 #define	ia_broadaddr	ia_dstaddr
@@ -57,6 +65,7 @@ struct in_ifaddr {
 	struct	in_multi *ia_multiaddrs; /* list of multicast addresses */
 };
 
+// SIOCAIFADDR
 struct	in_aliasreq {
 	char	ifra_name[IFNAMSIZ];		/* if name, e.g. "en0" */
 	struct	sockaddr_in ifra_addr;

@@ -47,12 +47,17 @@ struct	domain {
 	char	*dom_name;
 	void	(*dom_init)		/* initialize domain data structures */
 		__P((void));
+	// Unix domain 实现了这个功能用于在进程间传递文件描述符fs
+	// internet domain 未实现这个功能
 	int	(*dom_externalize)	/* externalize access rights */
 		__P((struct mbuf *));
 	int	(*dom_dispose)		/* dispose of internalized rights */
 		__P((struct mbuf *));
+	// 指向当前 domain 中的协议列表的开头和结尾
 	struct	protosw *dom_protosw, *dom_protoswNPROTOSW;
+	// domain 列表
 	struct	domain *dom_next;
+	// 保存路由相关信息
 	int	(*dom_rtattach)		/* initialize routing table */
 		__P((void **, int));
 	int	dom_rtoffset;		/* an arg to rtattach, in bits */

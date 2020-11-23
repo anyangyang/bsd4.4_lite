@@ -58,10 +58,13 @@
 struct protosw {
 	short	pr_type;		/* socket type used for */
 	struct	domain *pr_domain;	/* domain protocol a member of */
+	// domain 会维护一个协议数组，而 pr_protocol 用于表示当前协议在 domain 协议数组中的下标
 	short	pr_protocol;		/* protocol number */
-	short	pr_flags;		/* see below */
-/* protocol-protocol hooks */
+	short	pr_flags;		/* see below*/    // 介绍一些额外的协议特性
+/* protocol-protocol hooks，提供从其他协议调用的路径 */
+    // 处理从低层协议向上传递来的数据
 	void	(*pr_input)();		/* input to protocol (from below) */
+	// 处理从高层协议向下传递来的数据
 	int	(*pr_output)();		/* output to protocol (from above) */
 	void	(*pr_ctlinput)();	/* control input (from below) */
 	int	(*pr_ctloutput)();	/* control output (from above) */
@@ -69,9 +72,12 @@ struct protosw {
 	int	(*pr_usrreq)();		/* user request: see list below */
 /* utility hooks */
 	void	(*pr_init)();		/* initialization hook */
-	void	(*pr_fasttimo)();	/* fast timeout (200ms) */
-	void	(*pr_slowtimo)();	/* slow timeout (500ms) */
+	// pr_fasttimo 和 pr_slowtimo 用于周期性地执行某些函数，比如更新重传的 timer
+	void	(*pr_fasttimo)();	/* fast timeout (200ms)，每 200ms 执行一次 */
+	void	(*pr_slowtimo)();	/* slow timeout (500ms) 每 500ms 执行一次 */
+	// 当相关的空间不足时，调用 pr_drain 尽可能地释放可能的内存的空间
 	void	(*pr_drain)();		/* flush any excess space possible */
+	//
 	int	(*pr_sysctl)();		/* sysctl for protocol */
 };
 
@@ -84,8 +90,13 @@ struct protosw {
  * PR_ADDR and PR_CONNREQUIRED are mutually exclusive.
  */
 #define	PR_ATOMIC	0x01		/* exchange atomic messages only */
+// 如果 PR_ADDR 那么 PR_ATOMIC 也需要被设置。并且 PR_ADDR 与 PR_CONNREQUIRED 互斥
 #define	PR_ADDR		0x02		/* addresses given with messages */
 #define	PR_CONNREQUIRED	0x04		/* connection required by protocol */
+// 当 socket layer 将接收缓存中的数据传递给进程时
+// 当 socket layer 的接收缓存具有更多的可用空间时
+// 在这些情况下，通知协议层
+// 如果是面向连接的标记，则该标记被设置
 #define	PR_WANTRCVD	0x08		/* want PRU_RCVD calls */
 #define	PR_RIGHTS	0x10		/* passes capabilities */
 

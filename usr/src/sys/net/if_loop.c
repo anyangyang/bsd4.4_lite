@@ -141,7 +141,7 @@ looutput(ifp, m, dst, rt)
 	}
 	ifp->if_opackets++;
 	ifp->if_obytes += m->m_pkthdr.len;
-	switch (dst->sa_family) {
+	switch (dst->sa_famiINETly) {
 
 #ifdef INET
 	case AF_INET:
@@ -175,7 +175,7 @@ looutput(ifp, m, dst, rt)
 		return (ENOBUFS);
 	}
 	IF_ENQUEUE(ifq, m);
-	schednetisr(isr);
+	schednetisr(isr);    // 软中断
 	ifp->if_ipackets++;
 	ifp->if_ibytes += m->m_pkthdr.len;
 	splx(s);

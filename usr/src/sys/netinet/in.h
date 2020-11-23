@@ -120,13 +120,16 @@ struct in_addr {
 
 /*
  * Socket address, internet style.
+ * 用于存放 socket 绑定的地址，详情可见 c 语言创建 socket
+ * ps：如果将 sockaddr_in 类型转换成 sockaddr， 则 sin_port、sin_addr、sin_zero
+ * 将覆盖 sockaddr.sa_data
  */
 struct sockaddr_in {
-	u_char	sin_len;
-	u_char	sin_family;
-	u_short	sin_port;
-	struct	in_addr sin_addr;
-	char	sin_zero[8];
+	u_char	sin_len;              // always 16， 表示 sockaddr_in 的大小
+	u_char	sin_family;           // 地址族（address family）AF_INT
+	u_short	sin_port;             // 16 位端口号，这里需要使用网络序
+	struct	in_addr sin_addr;     // 因为历史原因，这里使用 in_addr 存放地址
+	char	sin_zero[8];          // 当前暂未使用，但是必须全部都设置为 0
 };
 
 /*

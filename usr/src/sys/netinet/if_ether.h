@@ -103,7 +103,7 @@ struct	ether_arp {
  * the address resolution code.  For example, each ec_softc or il_softc
  * begins with this structure.
  */
-struct	arpcom {
+struct arpcom {
 	struct 	ifnet ac_if;		/* network-visible interface */
     /*
      * ethernet hardware address
