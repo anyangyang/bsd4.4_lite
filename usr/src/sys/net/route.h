@@ -46,8 +46,8 @@
  * in their control blocks, e.g. inpcb.
  */
 struct route {
-	struct	rtentry *ro_rt;
-	struct	sockaddr ro_dst;
+	struct	rtentry *ro_rt;    // 路由信息
+	struct	sockaddr ro_dst;   // 声明了与 ro_rt 有关的 destination
 };
 
 /*

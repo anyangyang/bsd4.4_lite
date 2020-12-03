@@ -66,7 +66,7 @@
 #define	IPSENDREDIRECTS	1
 #endif
 int	ipforwarding = IPFORWARDING;
-int	ipsendredirects = IPSENDREDIRECTS;
+int	ipsendredirects = IPSENDREDIRECTS;   // 是否应该发送 ICMP 重定向
 int	ip_defttl = IPDEFTTL;
 #ifdef DIAGNOSTIC
 int	ipprintfs = 0;
@@ -74,9 +74,11 @@ int	ipprintfs = 0;
 
 extern	struct domain inetdomain;
 extern	struct protosw inetsw[];
-u_char	ip_protox[IPPROTO_MAX];
+u_char	ip_protox[IPPROTO_MAX];    // IP 头部协议号到 inetdomain 中到具体到协议映射
 int	ipqmaxlen = IFQ_MAXLEN;
+// ip 地址链表
 struct	in_ifaddr *in_ifaddr;			/* first inet address */
+// IP 输入队列
 struct	ifqueue ipintrq;
 
 /*
@@ -109,21 +111,25 @@ ip_init()
 {
 	register struct protosw *pr;
 	register int i;
-
+    // 在 IP 协议头部设置了上层协议的编码，比如：17(UDP), 6(TCP), 1(ICMP), 2(IGMP)
+    // 接下来我们就是要构造一个索引，将Ip协议头部的上层协议编码映射到 inetdomain 的 inesw 中
+    // 以便在处理过程中能够通过该映射直接找到相应的协议
 	pr = pffindproto(PF_INET, IPPROTO_RAW, SOCK_RAW);
 	if (pr == 0)
 		panic("ip_init");
 	for (i = 0; i < IPPROTO_MAX; i++)
-		ip_protox[i] = pr - inetsw;
+		ip_protox[i] = pr - inetsw;    // 未找到其他协议时，使用默认的 IP 协议 inetsw[6]进行处理
 	for (pr = inetdomain.dom_protosw;
 	    pr < inetdomain.dom_protoswNPROTOSW; pr++)
 		if (pr->pr_domain->dom_family == PF_INET &&
 		    pr->pr_protocol && pr->pr_protocol != IPPROTO_RAW)
 			ip_protox[pr->pr_protocol] = pr - inetsw;
+	// 初始化 reassembly queue
 	ipq.next = ipq.prev = &ipq;
 	ip_id = time.tv_sec & 0xffff;
-	ipintrq.ifq_maxlen = ipqmaxlen;
+	ipintrq.ifq_maxlen = ipqmaxlen;   // 设置 IP 输入队列的最大 size = 50
 #ifdef GATEWAY
+    // 分配一个二维数组 ip_ifmatrix，对系统之间的路由数据包数量进行统计
 	i = (if_index + 1) * (if_index + 1) * sizeof (u_long);
 	ip_ifmatrix = (u_long *) malloc(i, M_RTABLE, M_WAITOK);
 	bzero((char *)ip_ifmatrix, i);
@@ -131,11 +137,18 @@ ip_init()
 }
 
 struct	sockaddr_in ipaddr = { sizeof(ipaddr), AF_INET };
-struct	route ipforward_rt;
+struct	route ipforward_rt;  // IP forward 算法回缓存最近使用的路由
 
 /*
  * Ip input routine.  Checksum and byte swap header.  If fragmented
  * try to reassemble.  Process options.  Pass to next level.
+ *
+ * 对 IP 报文的处理可以分为以下几个部分
+ * 1、对IP头部进行验证
+ * 2、如果存在IP选项，则调用 ip_dooption 对IP选项进行处理
+ * 3、判断是否可以对 IP 报文进行转发，如果要，则调用 ip_forward 进行转发，否则就跳到第4步进行处理
+ * 4、判断是否需要重组
+ * 5、转发到上层协议进行处理
  */
 void
 ipintr()
@@ -152,7 +165,7 @@ next:
 	 * in first mbuf.
 	 */
 	s = splimp();
-	IF_DEQUEUE(&ipintrq, m);
+	IF_DEQUEUE(&ipintrq, m);   // 从 ip 输入队列中获取一个消息(mbuf)
 	splx(s);
 	if (m == 0)
 		return;
@@ -163,20 +176,25 @@ next:
 	/*
 	 * If no IP addresses have been set yet but the interfaces
 	 * are receiving, can't do anything with incoming packets yet.
+	 * 如果还没有任何 IP 地址被分配给网络接口，则丢弃所有 ip fragement
 	 */
 	if (in_ifaddr == NULL)
 		goto bad;
 	ipstat.ips_total++;
+	// 保证 ip 头部在一片连续的内存空间中
 	if (m->m_len < sizeof (struct ip) &&
 	    (m = m_pullup(m, sizeof (struct ip))) == 0) {
 		ipstat.ips_toosmall++;
 		goto next;
 	}
 	ip = mtod(m, struct ip *);
+	// 判断 ip 版本号是否正确，当前校验 ipv4
 	if (ip->ip_v != IPVERSION) {
 		ipstat.ips_badvers++;
 		goto bad;
 	}
+	// 获取 IP 协议头部大小 hlen 最小是 5 ，最大是 2^4 -1 = 15
+	// 即 IP 协议头部最小是 20 字节，最大是 60 字节
 	hlen = ip->ip_hl << 2;
 	if (hlen < sizeof(struct ip)) {	/* minimum header length */
 		ipstat.ips_badhlen++;
@@ -189,6 +207,7 @@ next:
 		}
 		ip = mtod(m, struct ip *);
 	}
+	// 对校验和进行校验，未被破坏的校验和最终结果应该是 0
 	if (ip->ip_sum = in_cksum(m, hlen)) {
 		ipstat.ips_badsum++;
 		goto bad;
@@ -196,6 +215,7 @@ next:
 
 	/*
 	 * Convert fields to host representation.
+	 * 将 16 位长度的字段从网络序转换到主机序
 	 */
 	NTOHS(ip->ip_len);
 	if (ip->ip_len < hlen) {
@@ -211,10 +231,16 @@ next:
 	 * Trim mbufs if longer than we expect.
 	 * Drop packet if shorter than we expect.
 	 */
+    // 如果IP头记录的当前IP报文长度小于mbuf中记录的长度，表示中间有数据丢失了
 	if (m->m_pkthdr.len < ip->ip_len) {
 		ipstat.ips_tooshort++;
 		goto bad;
 	}
+	// mbuf的长度大于IP报文的实际长度是有可能。
+	// 在链路层，比如以太网，会有碰撞冲突的可能，为了监测碰撞冲突，
+	// 如果发现数据小于 64 个字节(上层协议报文长度 + 16 个字节的以太网帧头部)
+	// 则会在末尾补0
+	// 所以这里需要将链路层补上的数据移除
 	if (m->m_pkthdr.len > ip->ip_len) {
 		if (m->m_len == m->m_pkthdr.len) {
 			m->m_len = ip->ip_len;
@@ -229,28 +255,36 @@ next:
 	 * error was detected (causing an icmp message
 	 * to be sent and the original packet to be freed).
 	 */
+	// 清空处理上一个包时，保存的源路由信息
 	ip_nhops = 0;		/* for source routed packets */
+	// 如果存在 ip 选项，则先对 IP 选项进行处理，
+	// 如果 ip_dooptions 返回 1，则处理下一个包，否则继续往下处理
 	if (hlen > sizeof (struct ip) && ip_dooptions(m))
 		goto next;
 
 	/*
 	 * Check our list of addresses, to see if the packet is for us.
+	 * in_ifaddr 是全局地址列表，维护了分配给当前系统中所有的地址。对 IP 协议地址进行校验，判断其是否
+	 * 到达最终目的地，如果到达，则根据 IP 头部中的上层协议号转发给传输层协议
+	 * 否则，判断当前系统是否设置了 ip_forward，将当前主机配置成 router，如果是则转发，否则丢弃
 	 */
 	for (ia = in_ifaddr; ia; ia = ia->ia_next) {
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
-
+	    // 如果当前地址是与 IP 目的地址一样
 		if (IA_SIN(ia)->sin_addr.s_addr == ip->ip_dst.s_addr)
 			goto ours;
+		// 校验广播地址，接收该 IP 报文的接口配置了广播的 flags
 		if (
 #ifdef	DIRECTED_BROADCAST
 		    ia->ia_ifp == m->m_pkthdr.rcvif &&
 #endif
 		    (ia->ia_ifp->if_flags & IFF_BROADCAST)) {
 			u_long t;
-
+            // 判断是否与配置的广播地址一样
 			if (satosin(&ia->ia_broadaddr)->sin_addr.s_addr ==
 			    ip->ip_dst.s_addr)
 				goto ours;
+			// 指向网段的ip地址
 			if (ip->ip_dst.s_addr == ia->ia_netbroadcast.s_addr)
 				goto ours;
 			/*
@@ -264,6 +298,7 @@ next:
 				goto ours;
 		}
 	}
+	// 多播
 	if (IN_MULTICAST(ntohl(ip->ip_dst.s_addr))) {
 		struct in_multi *inm;
 #ifdef MROUTING
@@ -312,19 +347,22 @@ next:
 		}
 		goto ours;
 	}
+	// 受限的广播地址 255.255.255.255
 	if (ip->ip_dst.s_addr == (u_long)INADDR_BROADCAST)
 		goto ours;
+	// 0.0.0.0
 	if (ip->ip_dst.s_addr == INADDR_ANY)
 		goto ours;
 
 	/*
 	 * Not for us; forward if possible and desirable.
 	 */
+	// 没有配置网络妆发，则将该 IP 报文静悄悄地丢弃
 	if (ipforwarding == 0) {
 		ipstat.ips_cantforward++;
 		m_freem(m);
 	} else
-		ip_forward(m, 0);
+		ip_forward(m, 0);   // 对 IP 报文进行转发， 第二个参数用于表示是否是源路由的处理
 	goto next;
 
 ours:
@@ -334,6 +372,8 @@ ours:
 	 * (We could look in the reassembly queue to see
 	 * if the packet was previously fragmented,
 	 * but it's not worth the time; just let them time out.)
+	 * DF: don't fragment
+	 * MF: fragment
 	 */
 	if (ip->ip_off &~ IP_DF) {
 		if (m->m_flags & M_EXT) {		/* XXX */
@@ -346,6 +386,7 @@ ours:
 		/*
 		 * Look for queue of fragments
 		 * of this datagram.
+		 * ipq 是一个循环队列
 		 */
 		for (fp = ipq.next; fp != &ipq; fp = fp->next)
 			if (ip->ip_id == fp->ipq_id &&
@@ -387,9 +428,10 @@ found:
 
 	/*
 	 * Switch out to protocol's input routine.
+	 * 通过 IP 协议头部的协议号映射到相应的上层协议中去处理
 	 */
 	ipstat.ips_delivered++;
-	(*inetsw[ip_protox[ip->ip_p]].pr_input)(m, hlen);
+	(*inetsw[ip_protox[ip->ip_p]].pr_input)(m, hlen);   //
 	goto next;
 bad:
 	m_freem(m);
@@ -989,6 +1031,14 @@ u_char inetctlerrmap[PRC_NCMDS] = {
  *
  * The srcrt parameter indicates whether the packet is being forwarded
  * via a source route.
+ *
+ * @Param m:
+ * @Param srcrt:
+ * 1、进一步判断是否允许转发，如果否，则直接返回。否则跳到第2步（IP地址，ttl 等）
+ * 2、在开始转发之前获取针对目的IP的缓存路由信息
+ * 3、判断是否要发送 ICMP 重定向
+ * 4、调用 ip_output 进行转发
+ * 5、对转发的错误进行处理
  */
 void
 ip_forward(m, srcrt)
@@ -1009,19 +1059,24 @@ ip_forward(m, srcrt)
 		printf("forward: src %x dst %x ttl %x\n", ip->ip_src,
 			ip->ip_dst, ip->ip_ttl);
 #endif
+	// m->m_flags & M_BCAST 是链路层的网卡驱动在接收在接收到链路层广播帧时设置
+	// 对与链路层的广播报文，永远都不会转发处理
 	if (m->m_flags & M_BCAST || in_canforward(ip->ip_dst) == 0) {
 		ipstat.ips_cantforward++;
 		m_freem(m);
 		return;
 	}
 	HTONS(ip->ip_id);
-	if (ip->ip_ttl <= IPTTLDEC) {
-		icmp_error(m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, dest, 0);
+	if (ip->ip_ttl <= IPTTLDEC) {   // time to live <= 1
+		icmp_error(m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, dest, 0);  //
 		return;
 	}
 	ip->ip_ttl -= IPTTLDEC;
-
+    // ipforward_rt 是一个全局变量，缓存了最近 forward 使用的路由信息
+    // 因为连续的 package 趋向与同一个目的地址
 	sin = (struct sockaddr_in *)&ipforward_rt.ro_dst;
+	// 如果 ipforward_rt 中的路由信息唯恐，或者 ipforward_rt 中的地址与不一致
+	// 即将 ipforward_rt 缓存的路由信息丢弃
 	if ((rt = ipforward_rt.ro_rt) == 0 ||
 	    ip->ip_dst.s_addr != sin->sin_addr.s_addr) {
 		if (ipforward_rt.ro_rt) {
@@ -1031,10 +1086,10 @@ ip_forward(m, srcrt)
 		sin->sin_family = AF_INET;
 		sin->sin_len = sizeof(*sin);
 		sin->sin_addr = ip->ip_dst;
-
+        // rtalloc 根据 ipforward_rt 中的信息去获取合适的路由信息
 		rtalloc(&ipforward_rt);
-		if (ipforward_rt.ro_rt == 0) {
-			icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_HOST, dest, 0);
+		if (ipforward_rt.ro_rt == 0) {   // 如果没有获取到路由信息
+			icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_HOST, dest, 0);  // host_unreachable
 			return;
 		}
 		rt = ipforward_rt.ro_rt;
@@ -1057,6 +1112,14 @@ ip_forward(m, srcrt)
 	 * and if packet was not source routed (or has any options).
 	 * Also, don't send redirect if forwarding using a default route
 	 * or a route modified by a redirect.
+	 *
+	 * 满足以下所有条件时，会发送 ICMP 重定向
+	 * 1、数据包进入路由其的接口与数据包被路由出的接口是同一个接口
+	 * 2、IP 协议头部 src 地址的子网或者网络与下一跳路由 IP 处在同一个子网或者网络上
+	 * 3、数据包不是源路由： 根据参数 srcrt
+	 * 4、内核被配置为发送重定向  ipsendredirects
+	 *
+	 * RFC 1122
 	 */
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
 	if (rt->rt_ifp == m->m_pkthdr.rcvif &&
@@ -1068,10 +1131,11 @@ ip_forward(m, srcrt)
 
 		if (RTA(rt) &&
 		    (src & RTA(rt)->ia_subnetmask) == RTA(rt)->ia_subnet) {
+		    // 选择合适的地址
 		    if (rt->rt_flags & RTF_GATEWAY)
-			dest = satosin(rt->rt_gateway)->sin_addr.s_addr;
+			    dest = satosin(rt->rt_gateway)->sin_addr.s_addr;
 		    else
-			dest = ip->ip_dst.s_addr;
+			    dest = ip->ip_dst.s_addr;
 		    /* Router requirements says to only send host redirects */
 		    type = ICMP_REDIRECT;
 		    code = ICMP_REDIRECT_HOST;
@@ -1087,13 +1151,15 @@ ip_forward(m, srcrt)
 			    | IP_ALLOWBROADCAST
 #endif
 						, 0);
+
 	if (error)
-		ipstat.ips_cantforward++;
+		ipstat.ips_cantforward++;  // 错误发生
 	else {
 		ipstat.ips_forward++;
-		if (type)
+		if (type)  // 需要发送 ICMP redirect message
 			ipstat.ips_redirectsent++;
 		else {
+            // 不需要发送 ICMP redirect message， 将 mcopy 释放掉
 			if (mcopy)
 				m_freem(mcopy);
 			return;
@@ -1102,7 +1168,7 @@ ip_forward(m, srcrt)
 	if (mcopy == NULL)
 		return;
 	destifp = NULL;
-
+    // 走到这里的时候 redirect 的 ICMP type 和 code 可能会被新的覆盖掉
 	switch (error) {
 
 	case 0:				/* forwarded, but need redirect */
@@ -1118,7 +1184,7 @@ ip_forward(m, srcrt)
 		code = ICMP_UNREACH_HOST;
 		break;
 
-	case EMSGSIZE:
+	case EMSGSIZE:    // ip 数据对与选中的输出interface 太大了，而ip包被设置不能分段输出
 		type = ICMP_UNREACH;
 		code = ICMP_UNREACH_NEEDFRAG;
 		if (ipforward_rt.ro_rt)

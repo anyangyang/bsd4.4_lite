@@ -64,6 +64,23 @@ static void ip_mloopback
  * header (with len, off, ttl, proto, tos, src, dst).
  * The mbuf chain containing the packet will be freed.
  * The mbuf opt, if present, will not be freed.
+ *
+ * 1. if_forward -> ip_output
+ * 2. 传输层协议 --> ip_output
+ *
+ * ip_output 可以分为以下三个部分
+ * 1、头部初始化
+ * 2、路由选择
+ * 3、源地址选择和分段
+ *
+ * @Param m0: 需要发送的包
+ * @Param opt: 需要包含的 IP 选项信息
+ * @Param ro：对目的IP地址缓存的路由信息
+ * @Param flags: IP_FORWARDING(forward)、
+ *               IP_RAWOUTPUT（包含了预先构造好对ip头部）、
+ *               IP_ALLOWBROADCAST（允许发送广播包）
+ *               IP_ROUTETOIF（忽略路由表和路由，直接发送到接口）
+ * @Param imo: 多播选项
  */
 int
 ip_output(m0, opt, ro, flags, imo)
@@ -86,6 +103,7 @@ ip_output(m0, opt, ro, flags, imo)
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("ip_output no HDR");
 #endif
+	// 如果存在选
 	if (opt) {
 		m = ip_insertoptions(m, opt, &len);
 		hlen = len;
@@ -93,6 +111,7 @@ ip_output(m0, opt, ro, flags, imo)
 	ip = mtod(m, struct ip *);
 	/*
 	 * Fill in IP header.
+	 *
 	 */
 	if ((flags & (IP_FORWARDING|IP_RAWOUTPUT)) == 0) {
 		ip->ip_v = IPVERSION;

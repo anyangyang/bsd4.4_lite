@@ -117,13 +117,18 @@ in_localaddr(in)
 in_canforward(in)
 	struct in_addr in;
 {
+    // 将地址转换成 long 形式
 	register u_long i = ntohl(in.s_addr);
 	register u_long net;
-
+    // 0xf0000000 E 类地址，保留，所以哪怕转发也不会有主机接收 240.0.0.0 - 255.255.255.254
+    // 或者 D 类地址，则不进行转发（D类地址保留用于多播)，以 1110 开头
+    // 这些类型的报文不进行转发
 	if (IN_EXPERIMENTAL(i) || IN_MULTICAST(i))
 		return (0);
+	// A 类地址
 	if (IN_CLASSA(i)) {
 		net = i & IN_CLASSA_NET;
+		// 如果网络号为 0，或者 127 环回网络，也不进行转发
 		if (net == 0 || net == (IN_LOOPBACKNET << IN_CLASSA_NSHIFT))
 			return (0);
 	}
