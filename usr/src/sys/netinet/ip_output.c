@@ -78,9 +78,11 @@ static void ip_mloopback
  * @Param ro：对目的IP地址缓存的路由信息
  * @Param flags: IP_FORWARDING(forward)、
  *               IP_RAWOUTPUT（包含了预先构造好对ip头部）、
- *               IP_ALLOWBROADCAST（允许发送广播包）
+ *               IP_ALLOWBROADCAST（允许发送广播包， UDP 广播包）
  *               IP_ROUTETOIF（忽略路由表和路由，直接发送到接口）
  * @Param imo: 多播选项
+ *
+ * 如果存在选项，则将选项插入到 IP 头部
  */
 int
 ip_output(m0, opt, ro, flags, imo)
@@ -103,7 +105,7 @@ ip_output(m0, opt, ro, flags, imo)
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("ip_output no HDR");
 #endif
-	// 如果存在选
+	// 如果存在选项，则将选项合并到头部中
 	if (opt) {
 		m = ip_insertoptions(m, opt, &len);
 		hlen = len;
@@ -112,10 +114,12 @@ ip_output(m0, opt, ro, flags, imo)
 	/*
 	 * Fill in IP header.
 	 *
+	 * IP_FORWARDING(从 ip_forward 来)或者 IP_RAWOUTPUT Ip 头部信息
+	 * 已经填好了，不需要再进行更改
 	 */
 	if ((flags & (IP_FORWARDING|IP_RAWOUTPUT)) == 0) {
 		ip->ip_v = IPVERSION;
-		ip->ip_off &= IP_DF;
+		ip->ip_off &= IP_DF;   // 将 IP_DF bit 之外的 ip_off bit 清零
 		ip->ip_id = htons(ip_id++);
 		ip->ip_hl = hlen >> 2;
 		ipstat.ips_localout++;
@@ -124,6 +128,7 @@ ip_output(m0, opt, ro, flags, imo)
 	}
 	/*
 	 * Route packet.
+	 * 如果缓存路由不存在
 	 */
 	if (ro == 0) {
 		ro = &iproute;
