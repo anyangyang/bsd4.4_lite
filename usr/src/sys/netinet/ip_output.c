@@ -82,7 +82,15 @@ static void ip_mloopback
  *               IP_ROUTETOIF（忽略路由表和路由，直接发送到接口）
  * @Param imo: 多播选项
  *
- * 如果存在选项，则将选项插入到 IP 头部
+ * 1. 构造IP头部信息
+ *  1.1、如果存在选项，则将选项插入到 IP 头部
+ *  1.2、设置IP头部相关信息
+ *2. 路由选择
+ *  2.1、根据目的地址选择一个有效的路由，如果参数 flags 中 IP_ROUTETOIF 被设置，
+ *       则搜索根据目的地址搜索全局的接口列表中每一个接口的地址列表，从中选择一个合适的接口作为出口
+ *       条件1: 如果接口是点对点接口，并且改接口的地址链表中存点对点目的地址与接口地址一致
+ *       条件2: 搜索所有的接口的地址，选择一个合适的接口
+ *3. 源地址选择与分段处理
  */
 int
 ip_output(m0, opt, ro, flags, imo)
@@ -156,7 +164,10 @@ ip_output(m0, opt, ro, flags, imo)
 	 */
 #define ifatoia(ifa)	((struct in_ifaddr *)(ifa))
 #define sintosa(sin)	((struct sockaddr *)(sin))
+	// 忽略路由表和路由，直接发送到接口
 	if (flags & IP_ROUTETOIF) {
+	    // ifa_ifwithdstaddr 搜索点对点网络
+	    // ifa_ifwithnet 搜索其他网络
 		if ((ia = ifatoia(ifa_ifwithdstaddr(sintosa(dst)))) == 0 &&
 		    (ia = ifatoia(ifa_ifwithnet(sintosa(dst)))) == 0) {
 			ipstat.ips_noroute++;
@@ -167,7 +178,7 @@ ip_output(m0, opt, ro, flags, imo)
 		ip->ip_ttl = 1;
 	} else {
 		if (ro->ro_rt == 0)
-			rtalloc(ro);
+			rtalloc(ro);    // 选择一个路由
 		if (ro->ro_rt == 0) {
 			ipstat.ips_noroute++;
 			error = EHOSTUNREACH;
@@ -273,6 +284,7 @@ ip_output(m0, opt, ro, flags, imo)
 	/*
 	 * If source address not specified yet, use address
 	 * of outgoing interface.
+	 * 如果未声明源地址，则使用选中的地址
 	 */
 	if (ip->ip_src.s_addr == INADDR_ANY)
 		ip->ip_src = IA_SIN(ia)->sin_addr;
@@ -303,12 +315,13 @@ ip_output(m0, opt, ro, flags, imo)
 sendit:
 	/*
 	 * If small enough for interface, can just send directly.
+	 * 不需要分段
 	 */
 	if ((u_short)ip->ip_len <= ifp->if_mtu) {
 		ip->ip_len = htons((u_short)ip->ip_len);
 		ip->ip_off = htons((u_short)ip->ip_off);
 		ip->ip_sum = 0;
-		ip->ip_sum = in_cksum(m, hlen);
+		ip->ip_sum = in_cksum(m, hlen);  // 生成校验和
 		error = (*ifp->if_output)(ifp, m,
 				(struct sockaddr *)dst, ro->ro_rt);
 		goto done;
@@ -497,6 +510,12 @@ ip_optcopy(ip, jp)
 
 /*
  * IP socket option processing.
+ * @Param op: PRCO_SETOPT or PRCO_GETOPT
+ * @Param so: 指向发送请求的 socket
+ * @Param level: must be IPPROTO_IP
+ * @Param optname: 选项名称
+ * @Param mp: 包含相关选项数据的 mbuf
+ *
  */
 int
 ip_ctloutput(op, so, level, optname, mp)

@@ -113,7 +113,7 @@ char **argv;
         }
 #ifdef SO_BROADCAST
 	i = 1;
-	if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &i, sizeof(i)) == -1) {
+	if (±(sock, SOL_SOCKET, SO_BROADCAST, &i, sizeof(i)) == -1) {
 		perror("brd: setsockopt");
 		exit(1);
 	}

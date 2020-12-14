@@ -372,8 +372,10 @@ ours:
 	 * (We could look in the reassembly queue to see
 	 * if the packet was previously fragmented,
 	 * but it's not worth the time; just let them time out.)
+	 *
 	 * DF: don't fragment
 	 * MF: fragment
+	 *
 	 */
 	if (ip->ip_off &~ IP_DF) {
 		if (m->m_flags & M_EXT) {		/* XXX */
